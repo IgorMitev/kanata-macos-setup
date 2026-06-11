@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>KeepAlive</key>
+  <true/>
+  <key>Label</key>
+  <string>homebrew.mxcl.kanata</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__HOME__/.config/kanata/start-kanata-when-ready.sh</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardErrorPath</key>
+  <string>/opt/homebrew/var/log/kanata.log</string>
+  <key>StandardOutPath</key>
+  <string>/opt/homebrew/var/log/kanata.log</string>
+  <key>WorkingDirectory</key>
+  <string>__HOME__</string>
+</dict>
+</plist>

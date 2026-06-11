@@ -1,0 +1,55 @@
+;; Kanata config generated from Karabiner home-row mods.
+;; Goal: reduce accidental modifier triggers while preserving multi-modifier chords.
+;; Strategy: bilateral-ish home row mods using tap-hold-except-keys:
+;; - rolling into normal same-hand typing keys forces tap behavior
+;; - rolling into another home-row modifier key can still chord
+;; - opposite-hand keys trigger hold behavior promptly for shortcuts
+
+(defcfg
+  process-unmapped-keys yes
+  concurrent-tap-hold yes
+  macos-dev-names-include (
+    "Apple Internal Keyboard / Trackpad"
+  )
+)
+
+(defsrc
+  f1 f2 f3 f4 f5 f6 f7 f8 f9 f10 f11 f12
+  grv 1 2 3 4 5 6 7 8 9 0 - = bspc
+  tab q w e r t y u i o p [ ] \
+  caps a s d f g h j k l ; ' ret
+  lsft z x c v b n m , . / rsft
+  lctl lmet lalt spc ralt rmet rctl
+)
+
+(defchordsv2
+  (d f j) left  250 all-released ()
+  (d f k) down  250 all-released ()
+  (d f i) up    250 all-released ()
+  (d f l) rght  250 all-released ()
+  (lalt lmet j) left 250 all-released ()
+  (lalt lmet k) down 250 all-released ()
+  (lalt lmet i) up   250 all-released ()
+  (lalt lmet l) rght 250 all-released ()
+)
+
+(defalias
+  a (tap-hold-press 200 200 a lsft)
+  s (tap-hold-except-keys 200 220 s lctl (q w e r t g z x c v b))
+  d (tap-hold-except-keys 200 220 d lalt (q w e r t g z x c v b))
+  f (tap-hold-except-keys 200 220 f lmet (q w e r t g z x c v b))
+
+  j (tap-hold-except-keys 200 220 j rmet (y u i o p h n m , . /))
+  k (tap-hold-except-keys 200 220 k ralt (y u i o p h n m , . /))
+  l (tap-hold-except-keys 200 220 l rctl (y u i o p h n m , . /))
+  ; (tap-hold-press 200 200 ; rsft)
+)
+
+(deflayer base
+  brdn brup mctl sls dtn dnd prev pp next mute vold volu
+  grv 1 2 3 4 5 6 7 8 9 0 - = bspc
+  tab q w e r t y u i o p [ ] \
+  bspc @a @s @d @f g h @j @k @l @; ' ret
+  lsft z x c v b n m , . / rsft
+  lctl lmet lalt spc ralt rmet rctl
+)
