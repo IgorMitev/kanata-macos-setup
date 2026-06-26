@@ -10,6 +10,7 @@
   concurrent-tap-hold yes
   macos-dev-names-include (
     "Apple Internal Keyboard / Trackpad"
+    "R-GO KEYBOARD"
   )
 )
 

@@ -5,6 +5,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KANATA_BIN=/opt/homebrew/opt/kanata/bin/kanata
 KANATA_LIST=/opt/homebrew/bin/kanata
 PRIMARY_DEVICE=${PRIMARY_DEVICE:-"Apple Internal Keyboard / Trackpad"}
+MISSING_POLL_INTERVAL=${MISSING_POLL_INTERVAL:-10}
+CONNECTED_POLL_INTERVAL=${CONNECTED_POLL_INTERVAL:-60}
 
 if [[ "$(uname)" != "Darwin" ]]; then
   echo "This installer is for macOS only." >&2
@@ -29,30 +31,83 @@ KANATA=$KANATA_BIN
 KANATA_LIST=$KANATA_LIST
 CFG="$HOME/.config/kanata/kanata.kbd"
 LOG=/opt/homebrew/var/log/kanata-wrapper.log
-PRIMARY_DEVICE="$PRIMARY_DEVICE"
+MISSING_POLL_INTERVAL=$MISSING_POLL_INTERVAL
+CONNECTED_POLL_INTERVAL=$CONNECTED_POLL_INTERVAL
 
 log() {
   printf '%s %s\\n' "\$(date '+%Y-%m-%d %H:%M:%S')" "\$*" >> "\$LOG"
 }
 
-device_ready() {
-  local devices
-  devices="\$(\$KANATA_LIST --list 2>&1 || true)"
-  if grep -Fq "\$PRIMARY_DEVICE" <<< "\$devices"; then
-    log "Detected primary keyboard: \$PRIMARY_DEVICE"
-    return 0
-  fi
-  return 1
+configured_keyboards() {
+  awk '
+    /macos-dev-names-include[[:space:]]*\(/ { in_block=1; next }
+    in_block && /\)/ { exit }
+    in_block {
+      if (match(\$0, /"[^"]+"/)) {
+        print substr(\$0, RSTART + 1, RLENGTH - 2)
+      }
+    }
+  ' "\$CFG"
 }
 
-log "Waiting for primary keyboard before starting Kanata: \$PRIMARY_DEVICE"
+keyboard_list() {
+  "\$KANATA_LIST" --list 2>&1 || true
+}
+
+all_configured_keyboards_connected() {
+  local devices missing=0 name
+  devices="\$(keyboard_list)"
+
+  while IFS= read -r name; do
+    [[ -z "\$name" ]] && continue
+    if ! grep -Fq "\$name" <<< "\$devices"; then
+      log "Configured keyboard is not connected: \$name"
+      missing=1
+    fi
+  done < <(configured_keyboards)
+
+  [[ "\$missing" -eq 0 ]]
+}
+
+restart_kanata() {
+  if [[ -n "\${KANATA_PID:-}" ]] && kill -0 "\$KANATA_PID" 2>/dev/null; then
+    log "Stopping Kanata pid=\$KANATA_PID"
+    kill "\$KANATA_PID" 2>/dev/null || true
+    wait "\$KANATA_PID" 2>/dev/null || true
+  fi
+
+  log "Starting Kanata"
+  "\$KANATA" --no-wait --cfg "\$CFG" &
+  KANATA_PID=\$!
+  log "Started Kanata pid=\$KANATA_PID"
+}
+
+trap '[[ -n "\${KANATA_PID:-}" ]] && kill "\$KANATA_PID" 2>/dev/null || true' EXIT INT TERM
+
+last_devices=""
+log "Monitoring configured keyboards before starting Kanata"
 
 while true; do
-  if device_ready; then
-    log "Starting Kanata"
-    exec "\$KANATA" --no-wait --cfg "\$CFG"
+  current_devices="\$(keyboard_list)"
+
+  if [[ "\$current_devices" != "\$last_devices" ]]; then
+    log "Keyboard device list changed"
+    last_devices="\$current_devices"
+    if all_configured_keyboards_connected; then
+      restart_kanata
+    else
+      log "Waiting for configured keyboards before starting Kanata"
+    fi
+  elif all_configured_keyboards_connected && ! kill -0 "\${KANATA_PID:-}" 2>/dev/null; then
+    log "Kanata is not running while configured keyboards are connected"
+    restart_kanata
   fi
-  sleep 1
+
+  if all_configured_keyboards_connected; then
+    sleep "\$CONNECTED_POLL_INTERVAL"
+  else
+    sleep "\$MISSING_POLL_INTERVAL"
+  fi
 done
 SH
 chmod +x "$HOME/.config/kanata/start-kanata-when-ready.sh"
