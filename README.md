@@ -43,17 +43,8 @@ Clone the repo, then run:
 
 `install-vhid-daemon.sh` expects the standalone Karabiner VirtualHIDDevice package to already be installed. If it is missing, the script prints the download URL.
 
-The Kanata installer defaults to the internal MacBook keyboard:
-
-```text
-Apple Internal Keyboard / Trackpad
-```
-
-Override it if needed:
-
-```bash
-PRIMARY_DEVICE="Exact Keyboard Name" ./scripts/install.sh
-```
+By default, Kanata applies this config to every keyboard macOS reports.
+To ignore a keyboard, add its exact name to `macos-dev-names-exclude` in `kanata.kbd`.
 
 Find keyboard names with:
 
@@ -93,6 +84,12 @@ Kanata LaunchDaemon running
 
 ```bash
 ./scripts/verify.sh
+```
+
+The wrapper starts Kanata immediately and checks every 60 seconds that the Kanata process is still running. Override the interval during install with:
+
+```bash
+HEALTH_CHECK_INTERVAL=30 ./scripts/install.sh
 ```
 
 Expected Kanata log lines include:
