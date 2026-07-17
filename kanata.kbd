@@ -8,8 +8,11 @@
 (defcfg
   process-unmapped-keys yes
   concurrent-tap-hold yes
-  ;; By default Kanata applies to every keyboard macOS reports.
-  ;; Add keyboard names here only when they should be ignored.
+  ;; Kanata 1.12+ stays alive when the Mac starts without a physical keyboard.
+  ;; The supervisor restarts Kanata when the physical device set changes.
+  macos-continue-if-no-devs-found yes
+  ;; Apply the mapping to every physical keyboard. Kanata 1.12 filters its
+  ;; own known virtual output devices before applying this exclusion list.
   macos-dev-names-exclude (
   )
 )
