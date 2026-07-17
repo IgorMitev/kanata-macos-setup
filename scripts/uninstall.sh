@@ -138,6 +138,15 @@ elif [[ -x "$VHID_REMOVE" ]]; then
   sudo "$VHID_REMOVE"
 fi
 
+# Older Karabiner uninstallers do not stop every menu/session helper after
+# deleting their executables. Stop those exact remnants before verification.
+for process_name in \
+  Karabiner-Menu \
+  Karabiner-NotificationWindow \
+  karabiner_session_monitor; do
+  sudo killall "$process_name" >/dev/null 2>&1 || true
+done
+
 # Remove only archived user copies and receipts after vendor uninstallers finish.
 rm -rf "$HOME/.config/kanata" "$HOME/.config/karabiner"
 sudo rm -f /opt/homebrew/var/log/kanata.log /opt/homebrew/var/log/kanata-wrapper.log /var/log/karabiner-vhid-daemon.log

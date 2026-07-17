@@ -111,7 +111,7 @@ verify_installed() {
 
   service_is_running "$VHID_LABEL" && pass "VirtualHID service is loaded" || fail "VirtualHID service is not loaded/running"
   service_is_running "$KANATA_LABEL" && pass "Kanata service is loaded" || fail "Kanata service is not loaded/running"
-  process_matches '/Library/Application Support/com\.igormitev\.kanata/bin/kanata' && pass "Repository Kanata process is running" || fail "Repository Kanata process is not running"
+  process_matches '^/Library/Application Support/com\.igormitev\.kanata/bin/kanata([[:space:]]|$)' && pass "Repository Kanata process is running" || fail "Repository Kanata process is not running"
 
   [[ -x "$VHID_DAEMON" ]] && pass "VirtualHID daemon exists" || fail "Missing VirtualHID daemon"
   ext=$(extension_line)
@@ -157,7 +157,7 @@ verify_installed() {
   else
     pass "Karabiner-Elements package receipt is absent"
   fi
-  process_matches '[K]arabiner-Elements|[K]arabiner-Core-Service|karabiner_console_user_server' && fail "Karabiner-Elements processes are running and may conflict" || pass "No Karabiner-Elements remapping processes are running"
+  process_matches '^/.*\/(Karabiner-Elements|Karabiner-Core-Service|karabiner_console_user_server)([[:space:]]|$)' && fail "Karabiner-Elements processes are running and may conflict" || pass "No Karabiner-Elements remapping processes are running"
 }
 
 verify_blank_slate() {
@@ -192,7 +192,7 @@ verify_blank_slate() {
     if launchctl print "system/$label" >/dev/null 2>&1; then fail "Service remains loaded: $label"; else pass "Service absent: $label"; fi
   done
 
-  process_matches '[k]anata|[K]arabiner-(Elements|Core-Service|VirtualHIDDevice)|karabiner_console_user_server' \
+  process_matches '^/.*\/(kanata|Karabiner-Elements|Karabiner-Core-Service|Karabiner-VirtualHIDDevice-Daemon|Karabiner-Menu|Karabiner-NotificationWindow|karabiner_session_monitor|karabiner_console_user_server)([[:space:]]|$)' \
     && fail "Kanata or Karabiner processes are still running" \
     || pass "No Kanata or Karabiner processes are running"
 
