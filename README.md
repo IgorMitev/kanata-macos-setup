@@ -21,7 +21,7 @@ standalone Karabiner VirtualHIDDevice
 - `com.igormitev.kanata.virtualhid` keeps the VirtualHID daemon available.
 - `com.igormitev.kanata` supervises Kanata and handles keyboard connection changes.
 - Kanata accepts arbitrary physical keyboards and ignores its virtual output device.
-- Kanata releases keyboard control at the login/lock screen and during fast user switching.
+- Kanata keeps the configured remapping active at the login/lock screen and during user switching.
 
 Repository-managed runtime files live under `/Library/Application Support/com.igormitev.kanata`, and logs live under `/Library/Logs/com.igormitev.kanata`. The stable executable approved in macOS is `/Library/Application Support/com.igormitev.kanata/bin/kanata`.
 

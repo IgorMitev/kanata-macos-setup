@@ -31,8 +31,8 @@ Test separately on the cabled Magic Keyboard and the R-GO Keyboard:
 | Two keyboards | Both connected | Alternate and then type concurrently | Both are remapped; virtual output is not reprocessed |
 | No physical keyboard | Disconnect/turn off external keyboards where safe | Wait through at least one supervision interval | Service remains recoverable and accepts a later keyboard |
 | Sleep/wake | Both connected | Sleep, wake, unlock, then type | Both recover without stuck modifiers or duplicates |
-| Lock screen | Logged in and Kanata active | Lock and type only in safe fields | Keyboard uses normal unmodified behavior while locked; remapping resumes after unlock |
-| Fast user switching | Kanata active | Switch away and return | Kanata releases control outside the active session and resumes safely |
+| Lock screen | Logged in and Kanata active | Lock and type only in safe fields | The configured remapping remains active while locked and after unlock |
+| Fast user switching | Kanata active | Switch away and return | The configured remapping remains active across the session change |
 | Supervised restart | Both connected | Stop only the Kanata child process | Supervisor restarts it and mappings return once |
 | Restart without Bluetooth | R-GO off; Magic Keyboard cabled | Restart and complete verification | No named-keyboard dependency blocks startup |
 

@@ -78,7 +78,7 @@ Do not tune home-row timing yet. Complete the deployment and lifecycle cases in 
 - boot with the Bluetooth R-GO Keyboard disconnected;
 - connect, disconnect, and reconnect the R-GO Keyboard;
 - type from the cabled and Bluetooth keyboards;
-- lock/unlock and fast user switching behavior;
+- remapping continuity across lock/unlock and fast user switching;
 - sleep/wake and restart;
 - supervised recovery after Kanata exits.
 

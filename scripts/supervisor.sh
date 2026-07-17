@@ -30,7 +30,7 @@ stop_kanata() {
 
 start_kanata() {
   log "starting Kanata"
-  "$KANATA" --no-wait --release-grab-on-lock --cfg "$CONFIG" &
+  "$KANATA" --no-wait --cfg "$CONFIG" &
   KANATA_PID=$!
   log "started Kanata pid=$KANATA_PID"
 }

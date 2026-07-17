@@ -89,8 +89,11 @@ assert_contains scripts/install.sh 'Apple Silicon (arm64) only' \
   "installer rejects unsupported architectures"
 assert_contains scripts/install.sh '/Library/Application Support/com.igormitev.kanata' \
   "installer uses the stable system path"
-assert_contains scripts/supervisor.sh '--release-grab-on-lock' \
-  "supervisor releases keyboard capture on lock"
+if /usr/bin/grep -F -- '--release-grab-on-lock' "$ROOT/scripts/supervisor.sh" >/dev/null 2>&1; then
+  fail "supervisor unexpectedly releases keyboard capture on lock"
+else
+  pass "supervisor preserves standard remapping on the lock screen"
+fi
 assert_contains kanata.kbd 'macos-continue-if-no-devs-found yes' \
   "config remains available when no physical keyboard is present"
 assert_contains launchd/com.igormitev.kanata.plist '<string>com.igormitev.kanata</string>' \
