@@ -1,6 +1,8 @@
-# Clean-slate installation
+# Migration from Karabiner or Homebrew Kanata
 
-This runbook moves an Apple Silicon Mac from an existing Karabiner/Kanata installation to the repository-managed setup. It deliberately separates preparation from destructive work.
+This runbook moves an Apple Silicon Mac from Karabiner-Elements, Homebrew
+Kanata, or this repository's installation to the repository-managed setup. It
+deliberately separates preparation from destructive work.
 
 ## Safety boundary
 
@@ -10,7 +12,7 @@ Before uninstalling anything:
 - Keep this page and the repository available locally.
 - Confirm that administrator authentication and multiple restarts are acceptable.
 - Run `./tests/static-checks.sh` and resolve every failure.
-- Run `./scripts/archive-current.sh` and create the migration archive on a path that none of the uninstall or reset operations remove.
+- Run `./scripts/migration/archive-current.sh` and create the migration archive on a path that none of the uninstall or reset operations remove.
 
 Do not manually delete a loaded DriverKit extension. Deactivate it using its vendor manager/uninstaller, then restart if requested.
 
@@ -31,11 +33,15 @@ Inspect the resulting archive before continuing. It must be outside the reposito
 
 The archive is for recovery and comparison. Do not copy archived service files into the new installation.
 
+The archive can contain keyboard configuration, logs, process listings, package
+state, and the Mac's computer name. Treat it as sensitive local diagnostic data;
+do not commit it or share it without reviewing its contents.
+
 ## Phase 1: create the blank slate
 
 Keep the Magic Keyboard cabled throughout this phase.
 
-1. Run `./scripts/uninstall.sh --purge --archive "/absolute/path/to/the/inspected/archive"` and read the discovered removal targets.
+1. Run `./scripts/migration/purge-legacy.sh --archive "/absolute/path/to/the/inspected/archive"` and review its removal summary.
 2. Confirm purge only after verifying the archive and the cabled recovery keyboard.
 3. Allow purge to stop and unload the existing Kanata service.
 4. Allow it to remove only the Homebrew `kanata` formula; leave Homebrew and all unrelated formulae installed.
@@ -105,7 +111,7 @@ If installation is interrupted:
 1. Rerun `./scripts/verify.sh` to identify which layer is incomplete.
 2. Complete the missing macOS approval or restart.
 3. Rerun the idempotent installer rather than copying files manually.
-4. If verification still fails, use `./scripts/uninstall.sh` (without `--purge`) to remove only repository-owned components, restart if requested, confirm normal keyboard input, and retry from the repository.
+4. If verification still fails, use `./scripts/uninstall.sh` to remove only repository-owned components, restart if requested, confirm normal keyboard input, and retry from the repository.
 
 Rollback to the previous setup only from the migration archive and only after the new services are stopped. Restore the smallest needed layer first; do not load old and new Kanata or VirtualHID services together.
 

@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/runtime.sh
+source "$SCRIPT_DIR/../lib/runtime.sh"
+
 usage() {
   cat <<'USAGE'
-Usage: ./scripts/archive-current.sh [--output ABSOLUTE_PATH]
+Usage: ./scripts/migration/archive-current.sh [--output ABSOLUTE_PATH]
 
 Copies current Kanata/Karabiner configuration, relevant service definitions,
 logs, package state, extension state, and process diagnostics. This script does
@@ -35,7 +39,16 @@ if [[ -z "$output" ]]; then
 fi
 [[ "$output" == /* ]] || { echo "Archive output must be an absolute path." >&2; exit 2; }
 case "$output" in
-  /|/Applications|/Library|/System|/Users|"$HOME")
+  /|/Applications|/Library|/System|/Users|"$HOME"|\
+  "$PROJECT_BASE"|"$PROJECT_BASE"/*|\
+  "$PROJECT_LOG_DIR"|"$PROJECT_LOG_DIR"/*|\
+  "$HOME/.config/kanata"|"$HOME/.config/kanata"/*|\
+  "$HOME/.config/karabiner"|"$HOME/.config/karabiner"/*|\
+  "$HOME/Library/Logs/Karabiner"|"$HOME/Library/Logs/Karabiner"/*|\
+  "/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice"|\
+  "/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice"/*|\
+  "/Library/Application Support/org.pqrs/Karabiner-Elements"|\
+  "/Library/Application Support/org.pqrs/Karabiner-Elements"/*)
     echo "Refusing unsafe archive output path: $output" >&2
     exit 2
     ;;
@@ -43,6 +56,26 @@ esac
 [[ ! -e "$output" ]] || { echo "Archive output already exists: $output" >&2; exit 1; }
 
 mkdir -p "$output/files" "$output/diagnostics"
+
+canonical_output="$(cd "$output" && pwd -P)"
+for purge_target in \
+  "$PROJECT_BASE" \
+  "$PROJECT_LOG_DIR" \
+  "$HOME/.config/kanata" \
+  "$HOME/.config/karabiner" \
+  "$HOME/Library/Logs/Karabiner" \
+  "/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice" \
+  "/Library/Application Support/org.pqrs/Karabiner-Elements"; do
+  [[ -e "$purge_target" ]] || continue
+  canonical_target="$(cd "$purge_target" && pwd -P)"
+  case "$canonical_output" in
+    "$canonical_target"|"$canonical_target"/*)
+      /bin/rmdir "$output/files" "$output/diagnostics" "$output" 2>/dev/null || true
+      echo "Refusing archive path that resolves inside a purge target: $canonical_output" >&2
+      exit 2
+      ;;
+  esac
+done
 
 copy_if_present() {
   local source=$1 relative=${1#/} destination="$output/files/${1#/}"
@@ -75,10 +108,10 @@ paths=(
   "$HOME/Library/Preferences/org.pqrs.Karabiner-Menu.plist"
   "$HOME/Library/Preferences/org.pqrs.Karabiner-Updater.plist"
   "$HOME/Library/Preferences/org.pqrs.Karabiner-EventViewer.plist"
-  "/Library/Application Support/com.igormitev.kanata"
-  "/Library/Logs/com.igormitev.kanata"
-  "/Library/LaunchDaemons/com.igormitev.kanata.plist"
-  "/Library/LaunchDaemons/com.igormitev.kanata.virtualhid.plist"
+  "$PROJECT_BASE"
+  "$PROJECT_LOG_DIR"
+  "$PROJECT_KANATA_PLIST"
+  "$PROJECT_VHID_PLIST"
   "/Library/LaunchDaemons/homebrew.mxcl.kanata.plist"
   "/Library/LaunchDaemons/org.pqrs.Karabiner-VirtualHIDDevice-Daemon.plist"
   "/opt/homebrew/var/log/kanata.log"
@@ -95,9 +128,9 @@ run_capture processes ps aux
 run_capture package_receipts pkgutil --pkgs
 run_capture karabiner_elements_package pkgutil --pkg-info org.pqrs.Karabiner-Elements
 run_capture virtualhid_package pkgutil --pkg-info org.pqrs.Karabiner-DriverKit-VirtualHIDDevice
-run_capture kanata_service launchctl print system/com.igormitev.kanata
+run_capture kanata_service launchctl print "system/$PROJECT_KANATA_LABEL"
 run_capture kanata_legacy_service launchctl print system/homebrew.mxcl.kanata
-run_capture virtualhid_service launchctl print system/com.igormitev.kanata.virtualhid
+run_capture virtualhid_service launchctl print "system/$PROJECT_VHID_LABEL"
 run_capture virtualhid_legacy_service launchctl print system/org.pqrs.Karabiner-VirtualHIDDevice-Daemon
 run_capture karabiner_core_service launchctl print system/org.pqrs.service.daemon.Karabiner-Core-Service
 run_capture karabiner_vhid_vendor_service launchctl print system/org.pqrs.service.daemon.Karabiner-VirtualHIDDevice-Daemon
@@ -107,7 +140,7 @@ fi
 
 kanata_candidate=""
 for candidate in \
-  "/Library/Application Support/com.igormitev.kanata/bin/kanata" \
+  "$PROJECT_BASE/bin/kanata" \
   /opt/homebrew/opt/kanata/bin/kanata \
   /opt/homebrew/bin/kanata; do
   if [[ -x "$candidate" ]]; then kanata_candidate=$candidate; break; fi

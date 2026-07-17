@@ -17,15 +17,21 @@ required=(
   README.md
   kanata.kbd
   scripts/install.sh
-  scripts/archive-current.sh
   scripts/uninstall.sh
   scripts/verify.sh
   scripts/supervisor.sh
   scripts/versions.sh
-  launchd/com.igormitev.kanata.plist
-  launchd/com.igormitev.kanata.virtualhid.plist
-  docs/clean-slate-install.md
+  scripts/lib/runtime.sh
+  launchd/local.kanata-macos-setup.plist
+  launchd/local.kanata-macos-setup.virtualhid.plist
+  docs/installation.md
   docs/acceptance-tests.md
+)
+
+migration_required=(
+  scripts/migration/archive-current.sh
+  scripts/migration/purge-legacy.sh
+  docs/migration-from-karabiner.md
 )
 
 for path in "${required[@]}"; do
@@ -33,6 +39,30 @@ for path in "${required[@]}"; do
     pass "required file exists: $path"
   else
     fail "required file is missing: $path"
+  fi
+done
+
+for path in "${migration_required[@]}"; do
+  if [[ -f "$ROOT/$path" ]]; then
+    pass "migration file exists: $path"
+  else
+    fail "migration file is missing: $path"
+  fi
+done
+
+for script in \
+  scripts/install.sh \
+  scripts/uninstall.sh \
+  scripts/verify.sh \
+  scripts/supervisor.sh \
+  scripts/lib/runtime.sh \
+  scripts/migration/archive-current.sh \
+  scripts/migration/purge-legacy.sh \
+  tests/static-checks.sh; do
+  if [[ -x "$ROOT/$script" ]]; then
+    pass "script is executable: $script"
+  else
+    fail "script is not executable: $script"
   fi
 done
 
@@ -87,8 +117,12 @@ assert_contains scripts/versions.sh 'VHID_VERSION="6.2.0"' \
   "VirtualHIDDevice version is pinned to 6.2.0"
 assert_contains scripts/install.sh 'Apple Silicon (arm64) only' \
   "installer rejects unsupported architectures"
-assert_contains scripts/install.sh '/Library/Application Support/com.igormitev.kanata' \
+assert_contains scripts/install.sh '/Library/Application Support/local.kanata-macos-setup' \
   "installer uses the stable system path"
+assert_contains scripts/uninstall.sh 'source "$SCRIPT_DIR/lib/runtime.sh"' \
+  "normal uninstaller uses shared runtime removal logic"
+assert_contains scripts/migration/purge-legacy.sh 'source "$SCRIPT_DIR/../lib/runtime.sh"' \
+  "legacy purge uses shared runtime removal logic"
 if /usr/bin/grep -F -- '--release-grab-on-lock' "$ROOT/scripts/supervisor.sh" >/dev/null 2>&1; then
   fail "supervisor unexpectedly releases keyboard capture on lock"
 else
@@ -96,12 +130,20 @@ else
 fi
 assert_contains kanata.kbd 'macos-continue-if-no-devs-found yes' \
   "config remains available when no physical keyboard is present"
-assert_contains launchd/com.igormitev.kanata.plist '<string>com.igormitev.kanata</string>' \
+assert_contains launchd/local.kanata-macos-setup.plist '<string>local.kanata-macos-setup</string>' \
   "Kanata launchd label is project-specific"
-assert_contains launchd/com.igormitev.kanata.virtualhid.plist '<string>com.igormitev.kanata.virtualhid</string>' \
+assert_contains launchd/local.kanata-macos-setup.virtualhid.plist '<string>local.kanata-macos-setup.virtualhid</string>' \
   "VirtualHID launchd label is project-specific"
 
-for link in docs/clean-slate-install.md docs/acceptance-tests.md; do
+personal_namespace='igor''mitev'
+if /usr/bin/grep -ER "$personal_namespace|com\.$personal_namespace" \
+  "$ROOT/README.md" "$ROOT/docs" "$ROOT/scripts" "$ROOT/launchd" "$ROOT/tests" "$ROOT/kanata.kbd" >/dev/null 2>&1; then
+  fail "personal namespace remains in current repository files"
+else
+  pass "current repository files use a neutral namespace"
+fi
+
+for link in docs/installation.md docs/migration-from-karabiner.md docs/acceptance-tests.md; do
   if /usr/bin/grep -F "]($link)" "$ROOT/README.md" >/dev/null; then
     pass "README links to $link"
   else

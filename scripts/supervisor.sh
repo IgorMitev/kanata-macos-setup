@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-KANATA="/Library/Application Support/com.igormitev.kanata/bin/kanata"
-CONFIG="/Library/Application Support/com.igormitev.kanata/config/kanata.kbd"
+KANATA="/Library/Application Support/local.kanata-macos-setup/bin/kanata"
+CONFIG="/Library/Application Support/local.kanata-macos-setup/config/kanata.kbd"
 POLL_INTERVAL="${KANATA_DEVICE_POLL_INTERVAL:-2}"
 RESTART_DELAY="${KANATA_RESTART_DELAY:-2}"
 KANATA_PID=""

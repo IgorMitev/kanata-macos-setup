@@ -3,10 +3,10 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.igormitev.kanata</string>
+  <string>local.kanata-macos-setup</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Library/Application Support/com.igormitev.kanata/libexec/supervisor.sh</string>
+    <string>/Library/Application Support/local.kanata-macos-setup/libexec/supervisor.sh</string>
   </array>
   <key>UserName</key>
   <string>root</string>
@@ -17,8 +17,8 @@
   <key>ProcessType</key>
   <string>Interactive</string>
   <key>StandardOutPath</key>
-  <string>/Library/Logs/com.igormitev.kanata/kanata.log</string>
+  <string>/Library/Logs/local.kanata-macos-setup/kanata.log</string>
   <key>StandardErrorPath</key>
-  <string>/Library/Logs/com.igormitev.kanata/kanata.log</string>
+  <string>/Library/Logs/local.kanata-macos-setup/kanata.log</string>
 </dict>
 </plist>

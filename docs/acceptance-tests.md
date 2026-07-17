@@ -81,7 +81,7 @@ On the second clean Apple Silicon Mac:
 
 1. Clone only this repository.
 2. Run static checks.
-3. Follow the clean-slate/install workflow without copying local files from the first Mac.
+3. Follow [Installation](installation.md) without copying local files from the first Mac.
 4. Complete only the documented macOS approvals and restarts.
 5. Run runtime verification and this acceptance plan.
 

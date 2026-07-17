@@ -5,13 +5,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=versions.sh
 source "$SCRIPT_DIR/versions.sh"
 
-BASE="/Library/Application Support/com.igormitev.kanata"
+BASE="/Library/Application Support/local.kanata-macos-setup"
 KANATA="$BASE/bin/kanata"
 CFG="$BASE/config/kanata.kbd"
 SUPERVISOR="$BASE/libexec/supervisor.sh"
-LOG_DIR="/Library/Logs/com.igormitev.kanata"
-KANATA_LABEL="com.igormitev.kanata"
-VHID_LABEL="com.igormitev.kanata.virtualhid"
+LOG_DIR="/Library/Logs/local.kanata-macos-setup"
+KANATA_LABEL="local.kanata-macos-setup"
+VHID_LABEL="local.kanata-macos-setup.virtualhid"
 KANATA_PLIST="/Library/LaunchDaemons/$KANATA_LABEL.plist"
 VHID_PLIST="/Library/LaunchDaemons/$VHID_LABEL.plist"
 VHID_DAEMON="/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice/Applications/Karabiner-VirtualHIDDevice-Daemon.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Daemon"
@@ -111,7 +111,7 @@ verify_installed() {
 
   service_is_running "$VHID_LABEL" && pass "VirtualHID service is loaded" || fail "VirtualHID service is not loaded/running"
   service_is_running "$KANATA_LABEL" && pass "Kanata service is loaded" || fail "Kanata service is not loaded/running"
-  process_matches '^/Library/Application Support/com\.igormitev\.kanata/bin/kanata([[:space:]]|$)' && pass "Repository Kanata process is running" || fail "Repository Kanata process is not running"
+  process_matches '^/Library/Application Support/local\.kanata-macos-setup/bin/kanata([[:space:]]|$)' && pass "Repository Kanata process is running" || fail "Repository Kanata process is not running"
 
   [[ -x "$VHID_DAEMON" ]] && pass "VirtualHID daemon exists" || fail "Missing VirtualHID daemon"
   ext=$(extension_line)

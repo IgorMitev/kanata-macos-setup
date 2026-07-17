@@ -7,16 +7,16 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/versions.sh"
 SUPERVISOR_SOURCE="$SCRIPT_DIR/supervisor.sh"
 
-BASE_DIR="/Library/Application Support/com.igormitev.kanata"
+BASE_DIR="/Library/Application Support/local.kanata-macos-setup"
 BIN_DIR="$BASE_DIR/bin"
 CONFIG_DIR="$BASE_DIR/config"
 LIBEXEC_DIR="$BASE_DIR/libexec"
-LOG_DIR="/Library/Logs/com.igormitev.kanata"
+LOG_DIR="/Library/Logs/local.kanata-macos-setup"
 KANATA_BIN="$BIN_DIR/kanata"
 KANATA_CONFIG="$CONFIG_DIR/kanata.kbd"
 SUPERVISOR="$LIBEXEC_DIR/supervisor.sh"
-KANATA_LABEL="com.igormitev.kanata"
-VHID_LABEL="com.igormitev.kanata.virtualhid"
+KANATA_LABEL="local.kanata-macos-setup"
+VHID_LABEL="local.kanata-macos-setup.virtualhid"
 KANATA_PLIST="/Library/LaunchDaemons/$KANATA_LABEL.plist"
 VHID_PLIST="/Library/LaunchDaemons/$VHID_LABEL.plist"
 VHID_RECEIPT="org.pqrs.Karabiner-DriverKit-VirtualHIDDevice"
@@ -66,12 +66,12 @@ for command in awk curl grep install lipo mktemp pkgutil plutil shasum unzip; do
 done
 
 [[ -f "$REPO_ROOT/kanata.kbd" ]] || die "Missing repository config: $REPO_ROOT/kanata.kbd"
-[[ -f "$REPO_ROOT/launchd/com.igormitev.kanata.plist" ]] || die "Missing Kanata launchd template."
-[[ -f "$REPO_ROOT/launchd/com.igormitev.kanata.virtualhid.plist" ]] || die "Missing VirtualHID launchd template."
+[[ -f "$REPO_ROOT/launchd/local.kanata-macos-setup.plist" ]] || die "Missing Kanata launchd template."
+[[ -f "$REPO_ROOT/launchd/local.kanata-macos-setup.virtualhid.plist" ]] || die "Missing VirtualHID launchd template."
 [[ -f "$SUPERVISOR_SOURCE" ]] || die "Missing supervisor script: $SUPERVISOR_SOURCE"
 /usr/bin/plutil -lint \
-  "$REPO_ROOT/launchd/com.igormitev.kanata.plist" \
-  "$REPO_ROOT/launchd/com.igormitev.kanata.virtualhid.plist"
+  "$REPO_ROOT/launchd/local.kanata-macos-setup.plist" \
+  "$REPO_ROOT/launchd/local.kanata-macos-setup.virtualhid.plist"
 
 require_command sudo
 SUDO=(/usr/bin/sudo)
@@ -90,7 +90,7 @@ for conflicting_label in \
   fi
 done
 
-WORK_DIR="$(/usr/bin/mktemp -d /tmp/com.igormitev.kanata.install.XXXXXX)"
+WORK_DIR="$(/usr/bin/mktemp -d /tmp/local.kanata-macos-setup.install.XXXXXX)"
 trap '/bin/rm -rf "$WORK_DIR"' EXIT
 
 KANATA_ARCHIVE="$WORK_DIR/$KANATA_ARCHIVE_NAME"
@@ -144,9 +144,9 @@ log "Requesting VirtualHID system-extension activation..."
 "${SUDO[@]}" /usr/bin/install -o root -g wheel -m 0644 "$REPO_ROOT/kanata.kbd" "$KANATA_CONFIG"
 "${SUDO[@]}" /usr/bin/install -o root -g wheel -m 0755 "$SUPERVISOR_SOURCE" "$SUPERVISOR"
 "${SUDO[@]}" /usr/bin/install -o root -g wheel -m 0644 \
-  "$REPO_ROOT/launchd/com.igormitev.kanata.plist" "$KANATA_PLIST"
+  "$REPO_ROOT/launchd/local.kanata-macos-setup.plist" "$KANATA_PLIST"
 "${SUDO[@]}" /usr/bin/install -o root -g wheel -m 0644 \
-  "$REPO_ROOT/launchd/com.igormitev.kanata.virtualhid.plist" "$VHID_PLIST"
+  "$REPO_ROOT/launchd/local.kanata-macos-setup.virtualhid.plist" "$VHID_PLIST"
 
 /usr/bin/plutil -lint "$KANATA_PLIST" "$VHID_PLIST"
 "${SUDO[@]}" "$KANATA_BIN" --check --cfg "$KANATA_CONFIG"
@@ -173,7 +173,7 @@ macOS may require you to approve the pqrs.org driver extension in:
   System Settings > General > Login Items & Extensions > Driver Extensions
 
 If macOS shows an Input Monitoring or Accessibility prompt for Kanata, approve
-the stable binary under /Library/Application Support/com.igormitev.kanata/bin.
+the stable binary under /Library/Application Support/local.kanata-macos-setup/bin.
 Restart macOS if the driver approval panel requests it, then run the repository
 verification script.
 MSG

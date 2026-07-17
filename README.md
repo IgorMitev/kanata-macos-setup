@@ -18,14 +18,14 @@ standalone Karabiner VirtualHIDDevice
 
 - Kanata is pinned to version 1.12.0 for Apple Silicon.
 - Karabiner VirtualHIDDevice is pinned to version 6.2.0 and installed independently.
-- `com.igormitev.kanata.virtualhid` keeps the VirtualHID daemon available.
-- `com.igormitev.kanata` supervises Kanata and handles keyboard connection changes.
+- `local.kanata-macos-setup.virtualhid` keeps the VirtualHID daemon available.
+- `local.kanata-macos-setup` supervises Kanata and handles keyboard connection changes.
 - Kanata accepts arbitrary physical keyboards and ignores its virtual output device.
 - Kanata keeps the configured remapping active at the login/lock screen and during user switching.
 
-Repository-managed runtime files live under `/Library/Application Support/com.igormitev.kanata`, and logs live under `/Library/Logs/com.igormitev.kanata`. The stable executable approved in macOS is `/Library/Application Support/com.igormitev.kanata/bin/kanata`.
+Repository-managed runtime files live under `/Library/Application Support/local.kanata-macos-setup`, and logs live under `/Library/Logs/local.kanata-macos-setup`. The stable executable approved in macOS is `/Library/Application Support/local.kanata-macos-setup/bin/kanata`.
 
-The repository intentionally does not depend on Homebrew for Kanata. An existing Homebrew installation is left alone.
+The repository intentionally does not depend on Homebrew for Kanata. The Homebrew package manager and unrelated formulae are left alone.
 
 ## Keyboard behavior
 
@@ -48,34 +48,24 @@ Home-row timing is deliberately treated as a second phase. First prove that inst
 
 Keep a wired keyboard available until verification passes. If the standalone driver is inactive, Kanata cannot emit replacement keystrokes.
 
-## Recommended workflow
+## Install workflow
 
-Do not begin with removal. First clone the repository and review or validate it while the current keyboard setup still works:
+Clone the repository and validate it before installing:
 
 ```bash
 ./tests/static-checks.sh
 ```
 
-Then follow the guided sequence in [Clean-slate installation](docs/clean-slate-install.md):
+Then follow [Installation](docs/installation.md):
 
-1. Archive the current Kanata/Karabiner state outside all removal paths.
-2. Remove the current Kanata installation and Karabiner-Elements dependencies.
-3. Restart and verify that the Mac is at a blank slate.
-4. Install the pinned standalone VirtualHID driver and Kanata through this repository.
-5. Complete the macOS approval checkpoints.
-6. Run repository verification.
-7. Execute the [acceptance test plan](docs/acceptance-tests.md).
+1. Run the installer.
+2. Complete the macOS approval checkpoints.
+3. Run repository verification.
+4. Execute the [acceptance test plan](docs/acceptance-tests.md).
 
-The removal steps are intentionally interactive and should only be run after the archive has been inspected.
-
-Create the archive with:
-
-```bash
-./scripts/archive-current.sh
-```
-
-Inspect the printed archive path and retain it for the purge command. Purge will
-refuse to run without a completed archive.
+If the Mac already has Karabiner-Elements or Homebrew Kanata, use
+[Migration from Karabiner or Homebrew Kanata](docs/migration-from-karabiner.md)
+before following the normal installation workflow.
 
 ## macOS approval checkpoints
 
@@ -90,16 +80,14 @@ Approve the stable installed Kanata path, not a temporary download or a versione
 
 ## Install and verify
 
-After the clean-slate steps in the runbook:
-
 ```bash
 ./scripts/install.sh
-./scripts/verify.sh
+./scripts/verify.sh --installed
 ```
 
 Run verification again after every restart and after changing privacy permissions. Do not proceed to home-row tuning until verification passes and both the cabled Magic Keyboard and Bluetooth R-GO Keyboard pass the lifecycle tests.
 
-## Uninstall and reset
+## Uninstall
 
 Use the repository uninstaller rather than deleting driver files by hand:
 
@@ -107,15 +95,10 @@ Use the repository uninstaller rather than deleting driver files by hand:
 ./scripts/uninstall.sh
 ```
 
-This default mode removes only components installed and owned by this repository. For the one-time clean-slate migration, first create and inspect the archive, then use the explicit purge mode:
-
-```bash
-./scripts/uninstall.sh --purge --archive "/absolute/path/to/the/inspected/archive"
-```
-
-Purge additionally removes legacy Homebrew Kanata, Karabiner-Elements, and standalone VirtualHID components after confirmation. It does not remove Homebrew itself or unrelated packages. The VirtualHID system extension must be deactivated before its files are removed. Follow any restart instruction before judging the reset complete. See [Recovery and rollback](docs/clean-slate-install.md#recovery-and-rollback) if keyboard output is lost or installation is interrupted.
-
-Never remove the pre-migration archive automatically. Delete it only after this setup passes acceptance testing and has also been reproduced successfully on the destination Mac.
+The normal uninstaller removes only repository-managed services, runtime files,
+and logs. It leaves the standalone VirtualHID package and extension installed.
+Legacy cleanup and rollback are documented separately in
+[Migration from Karabiner or Homebrew Kanata](docs/migration-from-karabiner.md).
 
 ## Development validation
 
