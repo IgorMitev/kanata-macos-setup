@@ -26,15 +26,14 @@
   lctl lmet lalt spc ralt rmet rctl
 )
 
-(defchordsv2
-  (d f j) left  250 all-released ()
-  (d f k) down  250 all-released ()
-  (d f i) up    250 all-released ()
-  (d f l) rght  250 all-released ()
-  (lalt lmet j) left 250 all-released ()
-  (lalt lmet k) down 250 all-released ()
-  (lalt lmet i) up   250 all-released ()
-  (lalt lmet l) rght 250 all-released ()
+(defoverrides
+  ;; D+F resolve to Option+Command after their normal hold thresholds. Output
+  ;; overrides have no three-key deadline, so J/K/I/L may be pressed later.
+  ;; The same mappings also work with the physical Option+Command keys.
+  (lalt lmet j) (left)
+  (lalt lmet k) (down)
+  (lalt lmet i) (up)
+  (lalt lmet l) (rght)
 )
 
 (defalias
