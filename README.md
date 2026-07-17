@@ -43,10 +43,13 @@ Home-row timing is deliberately treated as a second phase. First prove that inst
 - An Apple Silicon Mac
 - macOS administrator access
 - Internet access during installation
-- A keyboard connected by cable during driver removal or installation
+- A built-in keyboard, or a wired keyboard on a Mac without one, during driver removal or installation
 - Permission to restart macOS when requested
 
-Keep a wired keyboard available until verification passes. If the standalone driver is inactive, Kanata cannot emit replacement keystrokes.
+Keep a built-in or wired keyboard available until verification passes. A
+MacBook's internal keyboard is a suitable recovery keyboard; a desktop Mac such
+as a Mac mini needs a wired external keyboard. If the standalone driver is
+inactive, Kanata cannot emit replacement keystrokes.
 
 ## Install workflow
 

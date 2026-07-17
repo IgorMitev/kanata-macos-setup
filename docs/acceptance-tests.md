@@ -2,6 +2,10 @@
 
 Run these tests with the repository's runtime verification passing. Record the date, macOS version, installed versions, and result for each case.
 
+On a MacBook, the internal keyboard can be used wherever this plan names the
+cabled Magic Keyboard as the recovery keyboard. A desktop Mac without a
+built-in keyboard still needs a wired external keyboard.
+
 Use these result values: `PASS`, `FAIL`, `BLOCKED`, or `NOT RUN`. For a failure, save the time, connected keyboards, observed keys, verification output, and recent service logs.
 
 ## Basic mapping smoke test

@@ -7,7 +7,9 @@ first.
 
 ## Requirements
 
-- Keep a reliable keyboard connected by cable until verification passes.
+- Keep a reliable recovery keyboard available until verification passes. A
+  MacBook's internal keyboard is sufficient; a Mac without a built-in keyboard
+  needs a wired external keyboard.
 - Use an administrator account for the prompted system operations.
 - Keep internet access available while the pinned artifacts are downloaded.
 

@@ -8,7 +8,8 @@ deliberately separates preparation from destructive work.
 
 Before uninstalling anything:
 
-- Connect the Apple Magic Keyboard by cable and confirm it types normally.
+- Confirm a recovery keyboard types normally. Use the internal keyboard on a
+  MacBook, or connect a wired external keyboard on a Mac without one.
 - Keep this page and the repository available locally.
 - Confirm that administrator authentication and multiple restarts are acceptable.
 - Run `./tests/static-checks.sh` and resolve every failure.
@@ -39,10 +40,10 @@ do not commit it or share it without reviewing its contents.
 
 ## Phase 1: create the blank slate
 
-Keep the Magic Keyboard cabled throughout this phase.
+Keep the built-in or wired recovery keyboard available throughout this phase.
 
 1. Run `./scripts/migration/purge-legacy.sh --archive "/absolute/path/to/the/inspected/archive"` and review its removal summary.
-2. Confirm purge only after verifying the archive and the cabled recovery keyboard.
+2. Confirm purge only after verifying the archive and the built-in or wired recovery keyboard.
 3. Allow purge to stop and unload the existing Kanata service.
 4. Allow it to remove only the Homebrew `kanata` formula; leave Homebrew and all unrelated formulae installed.
 5. Allow it to deactivate the currently installed VirtualHID system extension with the vendor-provided manager.
@@ -100,7 +101,7 @@ Use the repeatable typing sample in [Acceptance tests](acceptance-tests.md#home-
 
 If keyboard output is lost:
 
-1. Keep or reconnect the Magic Keyboard by cable.
+1. Keep the MacBook's internal keyboard available, or reconnect the wired recovery keyboard.
 2. Stop the Kanata service using the repository uninstaller or the exact recovery command printed by the installer.
 3. Confirm normal keyboard input before attempting another driver action.
 4. Do not delete the active VirtualHID extension manually.
