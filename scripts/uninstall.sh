@@ -104,7 +104,22 @@ bootout_if_present org.pqrs.service.daemon.Karabiner-VirtualHIDDevice-Daemon /no
 sudo rm -f "$LEGACY_KANATA_PLIST" "$LEGACY_VHID_PLIST"
 
 if command -v brew >/dev/null 2>&1 && brew list --formula kanata >/dev/null 2>&1; then
-  brew uninstall kanata
+  # The legacy root LaunchDaemon can leave the Kanata keg and opt link owned by
+  # root. Restore ownership only within the exact Homebrew Kanata target so
+  # Homebrew can perform its own uninstall cleanly.
+  brew_prefix="$(brew --prefix)"
+  brew_group="$(stat -f '%Sg' "$brew_prefix")"
+  kanata_prefix="$(brew --prefix kanata)"
+  kanata_keg="$(realpath "$kanata_prefix")"
+  case "$kanata_keg" in
+    "$brew_prefix"/Cellar/kanata/*) ;;
+    *) echo "Refusing unexpected Homebrew Kanata path: $kanata_keg" >&2; exit 1 ;;
+  esac
+  sudo chown -R "$(id -un):$brew_group" "$kanata_keg"
+  if [[ -L "$brew_prefix/opt/kanata" ]]; then
+    sudo chown -h "$(id -un):$brew_group" "$brew_prefix/opt/kanata"
+  fi
+  brew uninstall --force kanata
 fi
 
 # This script must run as the console user because it drives the signed manager.
