@@ -4,6 +4,10 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=versions.sh
 source "$SCRIPT_DIR/versions.sh"
+# shellcheck source=lib/virtualhid-state.sh
+source "$SCRIPT_DIR/lib/virtualhid-state.sh"
+# shellcheck source=lib/legacy-inventory.sh
+source "$SCRIPT_DIR/lib/legacy-inventory.sh"
 
 BASE="/Library/Application Support/local.kanata-macos-setup"
 KANATA="$BASE/bin/kanata"
@@ -54,8 +58,15 @@ process_matches() {
   pgrep -if "$1" >/dev/null 2>&1
 }
 
-extension_line() {
-  systemextensionsctl list 2>&1 | grep -i 'org\.pqrs\.Karabiner-DriverKit-VirtualHIDDevice' || true
+# Sets `ext` to the VirtualHID extension lines. Returns non-zero (and records a
+# failure) when the system-extension query itself fails, so a broken query is
+# never mistaken for an absent extension.
+query_extension() {
+  ext=""
+  if ! ext=$(virtualhid_extension_lines systemextensionsctl list 2>/dev/null); then
+    fail "Unable to query system-extension state with systemextensionsctl"
+    return 1
+  fi
 }
 
 verify_platform() {
@@ -114,16 +125,17 @@ verify_installed() {
   process_matches '^/Library/Application Support/local\.kanata-macos-setup/bin/kanata([[:space:]]|$)' && pass "Repository Kanata process is running" || fail "Repository Kanata process is not running"
 
   [[ -x "$VHID_DAEMON" ]] && pass "VirtualHID daemon exists" || fail "Missing VirtualHID daemon"
-  ext=$(extension_line)
-  if [[ -z "$ext" ]]; then
-    fail "VirtualHID system extension is not registered"
-  elif grep -Eqi '\[activated enabled\]|activated[[:space:]]+enabled' <<<"$ext"; then
-    pass "VirtualHID system extension is activated and enabled"
-  else
-    fail "VirtualHID extension is present but not activated and enabled: $ext"
+  if query_extension; then
+    if [[ -z "$ext" ]]; then
+      fail "VirtualHID system extension is not registered"
+    elif virtualhid_extension_is_active "$ext"; then
+      pass "VirtualHID system extension is activated and enabled"
+    else
+      fail "VirtualHID extension is present but not activated and enabled: $ext"
+    fi
   fi
 
-  pkg_version=$(pkgutil --pkg-info org.pqrs.Karabiner-DriverKit-VirtualHIDDevice 2>/dev/null | awk '/^version:/{print $2}' || true)
+  pkg_version=$(virtualhid_package_version org.pqrs.Karabiner-DriverKit-VirtualHIDDevice)
   if [[ "$pkg_version" == "$VHID_VERSION" ]]; then
     pass "VirtualHID package version is $VHID_VERSION"
   elif [[ -n "$pkg_version" ]]; then
@@ -151,13 +163,18 @@ verify_installed() {
     fi
   fi
 
-  [[ ! -d /Applications/Karabiner-Elements.app ]] && pass "Karabiner-Elements application is absent" || fail "Karabiner-Elements remains installed"
+  legacy_karabiner_files_present && fail "Karabiner-Elements application or support files remain" || pass "Karabiner-Elements application and support files are absent"
   if pkgutil --pkg-info org.pqrs.Karabiner-Elements >/dev/null 2>&1; then
     fail "Karabiner-Elements package receipt remains"
   else
     pass "Karabiner-Elements package receipt is absent"
   fi
-  process_matches '^/.*\/(Karabiner-Elements|Karabiner-Core-Service|karabiner_console_user_server)([[:space:]]|$)' && fail "Karabiner-Elements processes are running and may conflict" || pass "No Karabiner-Elements remapping processes are running"
+  process_matches "$(legacy_process_regex)" && fail "Karabiner-Elements processes are running and may conflict" || pass "No Karabiner-Elements remapping processes are running"
+  if [[ -n "$(legacy_services_loaded)" ]]; then
+    fail "Legacy Karabiner services are loaded: $(legacy_services_loaded | tr '\n' ' ')"
+  else
+    pass "No legacy Karabiner services are loaded"
+  fi
 }
 
 verify_blank_slate() {
@@ -167,7 +184,6 @@ verify_blank_slate() {
     "$KANATA_PLIST"
     "$VHID_PLIST"
     "/Library/LaunchDaemons/homebrew.mxcl.kanata.plist"
-    "/Library/LaunchDaemons/org.pqrs.Karabiner-VirtualHIDDevice-Daemon.plist"
     "/Applications/Karabiner-Elements.app"
     "/Applications/Karabiner-EventViewer.app"
     "/Applications/.Karabiner-VirtualHIDDevice-Manager.app"
@@ -178,21 +194,24 @@ verify_blank_slate() {
   )
 
   for path in "${paths[@]}"; do
-    if [[ -e "$path" ]]; then fail "Still present: $path"; found=1; fi
+    if [[ -e "$path" || -L "$path" ]]; then fail "Still present: $path"; found=1; fi
   done
-  [[ $found -eq 0 ]] && pass "No known Kanata/Karabiner installation files remain"
+  # Same service-plist inventory that install.sh rejects, so a passing blank
+  # slate is always an installable state.
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    fail "Still present: $path"; found=1
+  done < <(legacy_service_plists_present)
+  [[ $found -eq 0 ]] && pass "No known Kanata/Karabiner installation or service files remain"
 
-  for label in \
-    "$KANATA_LABEL" \
-    "$VHID_LABEL" \
-    homebrew.mxcl.kanata \
-    org.pqrs.Karabiner-VirtualHIDDevice-Daemon \
-    org.pqrs.service.daemon.Karabiner-Core-Service \
-    org.pqrs.service.daemon.Karabiner-VirtualHIDDevice-Daemon; do
-    if launchctl print "system/$label" >/dev/null 2>&1; then fail "Service remains loaded: $label"; else pass "Service absent: $label"; fi
+  for label in "$KANATA_LABEL" "$VHID_LABEL" homebrew.mxcl.kanata "${LEGACY_DAEMON_LABELS[@]}"; do
+    if legacy_daemon_is_loaded "$label"; then fail "Service remains loaded: system/$label"; else pass "Service absent: system/$label"; fi
+  done
+  for label in "${LEGACY_AGENT_LABELS[@]}"; do
+    if legacy_agent_is_loaded "$label"; then fail "Agent remains loaded: gui/$label"; else pass "Agent absent: gui/$label"; fi
   done
 
-  process_matches '^/.*\/(kanata|Karabiner-Elements|Karabiner-Core-Service|Karabiner-VirtualHIDDevice-Daemon|Karabiner-Menu|Karabiner-NotificationWindow|karabiner_session_monitor|karabiner_console_user_server)([[:space:]]|$)' \
+  process_matches "$(legacy_process_regex kanata Karabiner-VirtualHIDDevice-Daemon)" \
     && fail "Kanata or Karabiner processes are still running" \
     || pass "No Kanata or Karabiner processes are running"
 
@@ -202,16 +221,21 @@ verify_blank_slate() {
     pass "Homebrew Kanata formula is absent"
   fi
 
-  if pkgutil --pkg-info org.pqrs.Karabiner-Elements >/dev/null 2>&1; then fail "Karabiner-Elements package receipt remains"; else pass "Karabiner-Elements receipt is absent"; fi
-  if pkgutil --pkg-info org.pqrs.Karabiner-DriverKit-VirtualHIDDevice >/dev/null 2>&1; then fail "VirtualHID package receipt remains"; else pass "VirtualHID receipt is absent"; fi
+  # Receipts are metadata; a vendor uninstall can leave them behind and the
+  # installer tolerates them. The purge script forgets them on success.
+  if pkgutil --pkg-info org.pqrs.Karabiner-Elements >/dev/null 2>&1; then warn "Karabiner-Elements package receipt remains (harmless without files; the installer forgets it)"; else pass "Karabiner-Elements receipt is absent"; fi
+  if pkgutil --pkg-info org.pqrs.Karabiner-DriverKit-VirtualHIDDevice >/dev/null 2>&1; then warn "VirtualHID package receipt remains (harmless without files)"; else pass "VirtualHID receipt is absent"; fi
 
-  ext=$(extension_line)
-  if [[ -z "$ext" ]]; then
-    pass "VirtualHID system extension is absent"
-  elif grep -Eqi '\[activated enabled\]|activated[[:space:]]+enabled' <<<"$ext"; then
-    fail "VirtualHID system extension remains active: $ext"
-  else
-    warn "VirtualHID extension is deactivated but still listed; restart macOS and verify again: $ext"
+  if query_extension; then
+    if [[ -z "$ext" ]]; then
+      pass "VirtualHID system extension is absent"
+    elif virtualhid_extension_is_active "$ext"; then
+      fail "VirtualHID system extension remains active: $ext"
+    elif virtualhid_extension_requires_deactivation "$ext"; then
+      fail "VirtualHID extension is still registered and was not deactivated: $ext"
+    else
+      warn "VirtualHID extension is terminated but still listed; restart macOS and verify again: $ext"
+    fi
   fi
 }
 

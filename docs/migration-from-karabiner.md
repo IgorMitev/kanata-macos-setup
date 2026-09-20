@@ -1,19 +1,23 @@
-# Migration from Karabiner or Homebrew Kanata
+# Migration and complete removal
 
-This runbook moves an Apple Silicon Mac from Karabiner-Elements, Homebrew
-Kanata, or this repository's installation to the repository-managed setup. It
-deliberately separates preparation from destructive work.
+This runbook creates a verified blank slate from Karabiner-Elements, Homebrew
+Kanata, or this repository's installation. Continue through installation and
+acceptance when migrating to the repository-managed setup; stop after blank-slate
+verification when the goal is complete removal. Preparation is deliberately
+separated from destructive work.
 
 ## Safety boundary
 
-Before uninstalling anything:
+Before uninstalling anything, run repository scripts as the logged-in user,
+not by applying `sudo` to the whole script. They request administrator
+authentication for individual privileged operations.
 
 - Confirm a recovery keyboard types normally. Use the internal keyboard on a
   MacBook, or connect a wired external keyboard on a Mac without one.
 - Keep this page and the repository available locally.
 - Confirm that administrator authentication and multiple restarts are acceptable.
 - Run `./tests/static-checks.sh` and resolve every failure.
-- Run `./scripts/migration/archive-current.sh` and create the migration archive on a path that none of the uninstall or reset operations remove.
+- Run `./scripts/migration/archive-current.sh` and create the archive on a path that none of the uninstall or reset operations remove. The helper uses `sudo` only if it must copy root-readable files.
 
 Do not manually delete a loaded DriverKit extension. Deactivate it using its vendor manager/uninstaller, then restart if requested.
 
@@ -44,14 +48,14 @@ Keep the built-in or wired recovery keyboard available throughout this phase.
 
 1. Run `./scripts/migration/purge-legacy.sh --archive "/absolute/path/to/the/inspected/archive"` and review its removal summary.
 2. Confirm purge only after verifying the archive and the built-in or wired recovery keyboard.
-3. Allow purge to stop and unload the existing Kanata service.
+3. Allow purge to stop and unload the existing Kanata service and every inventoried legacy Karabiner daemon and user agent (including pre-14 `karabiner_grabber` services).
 4. Allow it to remove only the Homebrew `kanata` formula; leave Homebrew and all unrelated formulae installed.
-5. Allow it to deactivate the currently installed VirtualHID system extension with the vendor-provided manager.
+5. Allow it to deactivate any registered VirtualHID system extension (active or awaiting approval) with the vendor-provided manager. Already-terminated records need no deactivation.
 6. Allow it to run the official Karabiner-Elements uninstaller if Karabiner-Elements is installed.
 7. Allow it to remove standalone VirtualHID components with the vendor-provided uninstaller where applicable.
 8. Allow it to remove only project-owned Kanata services, installed configuration, and logs.
 9. Restart macOS when requested.
-10. Run the repository verification/reset check and inspect any remaining components before deleting them.
+10. Run `./scripts/verify.sh --blank-slate` and inspect any reported remnants rather than deleting driver files manually.
 
 A blank slate means:
 
@@ -62,11 +66,29 @@ A blank slate means:
 - the Homebrew Kanata formula is absent;
 - Homebrew and unrelated packages remain intact.
 
-Package receipts or disabled extension records can remain visible after a correct vendor uninstall. Treat them as evidence to investigate, not permission to delete arbitrary system files.
+Package receipts or terminated extension records can remain visible after a
+correct vendor uninstall. Blank-slate verification reports those metadata-only
+remnants as warnings. Treat them as evidence to investigate, not permission to
+delete arbitrary system files.
+
+The cleanup tolerates receipt-only remnants and terminated extension records,
+and forgets the receipts once the vendor removal succeeds. `verify.sh
+--blank-slate` reports leftover receipts as warnings, not failures. Incomplete
+VirtualHID or Karabiner-Elements file trees are not removed manually: reinstall
+the same official version to restore its vendor cleanup tools, then rerun the
+cleanup. If a registered VirtualHID extension (active or awaiting approval) has
+lost its signed manager application, the cleanup reports the installed version
+and stops before changing anything; restore that manager with the same package
+before retrying, and restart when requested.
+
+If the goal is complete removal, stop after blank-slate verification passes.
+The archive remains a separate recovery artifact and is not removed by purge.
 
 ## Phase 2: repository installation
 
-1. Run `./scripts/install.sh` from this repository.
+Skip this phase for complete removal.
+
+1. Run `./scripts/install.sh` from this repository as the logged-in user, not with `sudo`.
 2. Authenticate administrator operations when prompted.
 3. Allow the installer to download and verify the pinned Kanata and VirtualHID artifacts.
 4. Stop at every printed macOS approval checkpoint.
@@ -74,7 +96,7 @@ Package receipts or disabled extension records can remain visible after a correc
 6. Restart if macOS requests it.
 7. Grant Input Monitoring to the stable installed Kanata executable.
 8. Grant Accessibility only if macOS requests it or verification reports it missing.
-9. Run `./scripts/verify.sh`.
+9. Run `./scripts/verify.sh --installed` and rerun it after later approval changes or restarts.
 
 If privacy controls show an old or temporary Kanata entry, remove that stale entry and add/enable the stable installed executable named by the installer. A copied executable can require a new approval even when it has the same name.
 
@@ -102,14 +124,14 @@ Use the repeatable typing sample in [Acceptance tests](acceptance-tests.md#home-
 If keyboard output is lost:
 
 1. Keep the MacBook's internal keyboard available, or reconnect the wired recovery keyboard.
-2. Stop the Kanata service using the repository uninstaller or the exact recovery command printed by the installer.
+2. Stop the repository-managed services with `./scripts/uninstall.sh`.
 3. Confirm normal keyboard input before attempting another driver action.
 4. Do not delete the active VirtualHID extension manually.
 5. If necessary, restart and leave Kanata disabled while collecting verification output.
 
 If installation is interrupted:
 
-1. Rerun `./scripts/verify.sh` to identify which layer is incomplete.
+1. Rerun `./scripts/verify.sh --installed` to identify which layer is incomplete.
 2. Complete the missing macOS approval or restart.
 3. Rerun the idempotent installer rather than copying files manually.
 4. If verification still fails, use `./scripts/uninstall.sh` to remove only repository-owned components, restart if requested, confirm normal keyboard input, and retry from the repository.

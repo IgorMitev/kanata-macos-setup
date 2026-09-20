@@ -2,8 +2,27 @@
 
 This is the normal workflow for a clean Apple Silicon Mac. If the Mac already
 has Karabiner-Elements or Homebrew Kanata, follow
-[Migration from Karabiner or Homebrew Kanata](migration-from-karabiner.md)
-first.
+[Migration and complete removal](migration-from-karabiner.md) to create a
+verified blank slate first.
+
+Kanata and VirtualHID do not need to be installed in advance. The installer
+downloads, verifies, and installs both pinned dependencies. It also repairs a
+same-version VirtualHID installation whose required daemon or manager file is
+missing, and ignores a harmless Karabiner-Elements receipt when no application,
+support files, service, or process remains. Receipt-only VirtualHID metadata and
+a terminated system-extension record without installed files do not block
+installation. Rerunning the installer over a healthy repository installation is
+supported and idempotent.
+
+The installer intentionally stops for a different-version or unreceipted
+VirtualHID installation that still has files or a registered extension (active
+or awaiting approval), for any Karabiner-Elements application, support files,
+service files, loaded services, or processes, and for legacy remapping services
+such as `karabiner_grabber`. Those states require the vendor-assisted migration
+cleanup because replacing a live or staged keyboard driver may require
+deactivation and a restart. The installer, migration cleanup, and
+`verify.sh --blank-slate` share one legacy-component inventory, so a passing
+blank-slate check is accepted by the installer's legacy-state checks.
 
 ## Requirements
 
@@ -15,7 +34,9 @@ first.
 
 ## Validate and install
 
-From the repository root:
+From the repository root, run both commands as the logged-in user, not with
+`sudo`. The installer requests administrator authentication when a system
+operation needs it.
 
 ```bash
 ./tests/static-checks.sh
@@ -55,3 +76,7 @@ Run:
 Verification must pass after installation, after privacy changes, and after a
 restart. Then complete the [Acceptance tests](acceptance-tests.md), including a
 restart with the Bluetooth keyboard off and a late Bluetooth connection.
+
+For removal, choose between the repository-only uninstaller and the complete
+blank-slate workflow described in the [README](../README.md#uninstall). Do not
+manually remove VirtualHID driver files.

@@ -27,6 +27,14 @@ Repository-managed runtime files live under `/Library/Application Support/local.
 
 The repository intentionally does not depend on Homebrew for Kanata. The Homebrew package manager and unrelated formulae are left alone.
 
+Kanata and VirtualHID may both be absent on a clean Mac; the installer fetches
+and verifies them. Receipt-only remnants do not block installation. Any
+remaining Karabiner-Elements application, support files, service files, or
+processes, or a different VirtualHID version with installed files or a
+registered extension (active or awaiting approval), are migration states
+handled by the documented vendor-assisted cleanup. Rerunning the installer on a
+healthy installation is supported.
+
 ## Keyboard behavior
 
 - `A` / `S` / `D` / `F` held → left Shift / Control / Option / Command
@@ -53,7 +61,11 @@ inactive, Kanata cannot emit replacement keystrokes.
 
 ## Install workflow
 
-Clone the repository and validate it before installing:
+Clone the repository, open a shell at its root, and run all repository scripts as
+the logged-in user, **not** with `sudo`. The scripts request administrator
+authentication for the individual system operations that need it.
+
+Validate the repository before installing:
 
 ```bash
 ./tests/static-checks.sh
@@ -61,14 +73,14 @@ Clone the repository and validate it before installing:
 
 Then follow [Installation](docs/installation.md):
 
-1. Run the installer.
-2. Complete the macOS approval checkpoints.
-3. Run repository verification.
+1. Run `./scripts/install.sh` as the logged-in user.
+2. Complete the macOS approval checkpoints and restart if requested.
+3. Run `./scripts/verify.sh --installed`; rerun it after approval changes and restarts.
 4. Execute the [acceptance test plan](docs/acceptance-tests.md).
 
 If the Mac already has Karabiner-Elements or Homebrew Kanata, use
-[Migration from Karabiner or Homebrew Kanata](docs/migration-from-karabiner.md)
-before following the normal installation workflow.
+[Migration and complete removal](docs/migration-from-karabiner.md) to create a
+verified blank slate before following the normal installation workflow.
 
 ## macOS approval checkpoints
 
@@ -92,16 +104,32 @@ Run verification again after every restart and after changing privacy permission
 
 ## Uninstall
 
-Use the repository uninstaller rather than deleting driver files by hand:
+Run uninstall scripts as the logged-in user, not with `sudo`.
+
+### Remove only the repository installation
 
 ```bash
 ./scripts/uninstall.sh
 ```
 
-The normal uninstaller removes only repository-managed services, runtime files,
-and logs. It leaves the standalone VirtualHID package and extension installed.
-Legacy cleanup and rollback are documented separately in
-[Migration from Karabiner or Homebrew Kanata](docs/migration-from-karabiner.md).
+This stops and removes only repository-managed Kanata and VirtualHID services,
+runtime files, and logs. It deliberately leaves the standalone VirtualHID
+package and system extension installed, along with Homebrew, Karabiner-Elements,
+legacy Kanata, and user configuration.
+
+### Remove Kanata, Karabiner-Elements, and standalone VirtualHID
+
+A complete removal is the destructive blank-slate workflow in
+[Migration and complete removal](docs/migration-from-karabiner.md):
+
+1. Keep a built-in or wired recovery keyboard available.
+2. Run the static checks.
+3. Create and inspect an archive with `./scripts/migration/archive-current.sh`.
+4. Run `./scripts/migration/purge-legacy.sh --archive "/absolute/path/to/the/inspected/archive"`.
+5. Restart when requested.
+6. Run `./scripts/verify.sh --blank-slate`.
+
+Do not manually delete a loaded VirtualHID extension or its driver files.
 
 ## Development validation
 
@@ -111,4 +139,4 @@ The static checks are read-only. They validate shell syntax, launchd property li
 ./tests/static-checks.sh
 ```
 
-Successful static checks do not prove that macOS permissions or the DriverKit extension are active; `./scripts/verify.sh` and the manual acceptance tests cover those runtime conditions.
+Successful static checks do not prove that macOS permissions or the DriverKit extension are active; `./scripts/verify.sh --installed` and the manual acceptance tests cover those runtime conditions.
