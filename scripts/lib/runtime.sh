@@ -9,15 +9,22 @@ PROJECT_VHID_PLIST="/Library/LaunchDaemons/$PROJECT_VHID_LABEL.plist"
 
 project_bootout_if_present() {
   local label=$1 plist=$2
+  local attempt
   if launchctl print "system/$label" >/dev/null 2>&1; then
     sudo launchctl bootout "system/$label" 2>/dev/null || true
   elif [[ -f "$plist" ]]; then
     sudo launchctl bootout system "$plist" 2>/dev/null || true
   fi
-  if launchctl print "system/$label" >/dev/null 2>&1; then
-    echo "Failed to unload service: $label" >&2
-    return 1
-  fi
+  # launchctl can return before a KeepAlive service disappears from its domain.
+  # Allow the asynchronous bootout to complete before reporting failure.
+  for ((attempt = 0; attempt < 100; attempt++)); do
+    if ! launchctl print "system/$label" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.1
+  done
+  echo "Failed to unload service: $label" >&2
+  return 1
 }
 
 remove_project_install() {
